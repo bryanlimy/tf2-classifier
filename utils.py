@@ -29,13 +29,14 @@ class Logger(object):
       self.test_loss(loss)
       self.test_accuracy(labels, predictions)
 
-  def print_progress(self, epoch):
-    template = 'Epoch {}, Loss {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}'
+  def print_progress(self, epoch, elapse):
+    template = 'Epoch {}, Loss {:.4f}, Accuracy: {:.2f}, Test Loss: {:.4f}, ' \
+               'Test Accuracy: {:.2f}, Time: {:.2f}s'
     print(
         template.format(epoch, self.train_loss.result(),
                         self.train_accuracy.result() * 100,
                         self.test_loss.result(),
-                        self.test_accuracy.result() * 100))
+                        self.test_accuracy.result() * 100, elapse))
 
 
 def get_dataset(hparams):

@@ -1,3 +1,4 @@
+import time
 import tensorflow as tf
 import tensorflow.keras as keras
 
@@ -33,7 +34,7 @@ class Model(keras.Model):
     return output
 
 
-@tf.function
+
 def train_step(features, labels, model, loss_function, optimizer):
   with tf.GradientTape() as tape:
     predictions = model(features)
@@ -68,16 +69,21 @@ def main():
   logger = Logger()
 
   for epoch in range(hparams.epochs):
+
+    elapse = time.time()
+
     for images, labels in train_dataset:
       loss, predictions = train_step(images, labels, model, loss_function,
                                      optimizer)
       logger.log_progress(loss, labels, predictions, mode='train')
 
+    elapse = time.time() - elapse
+
     for images, labels in test_dataset:
       loss, predictions = test_step(images, labels, model, loss_function)
       logger.log_progress(loss, labels, predictions, mode='test')
 
-    logger.print_progress(epoch)
+    logger.print_progress(epoch, elapse)
 
 
 if __name__ == "__main__":
