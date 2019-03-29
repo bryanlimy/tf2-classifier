@@ -1,8 +1,10 @@
+import os
 import time
 import tensorflow as tf
 import tensorflow.keras as keras
-
 from utils import HParams, Logger, get_dataset
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 def get_hparams():
@@ -34,20 +36,24 @@ class Model(keras.Model):
     return output
 
 
+def loss_fn(labels, predictions):
+  return keras.losses.SparseCategoricalCrossentropy()(labels, predictions)
 
-def train_step(features, labels, model, loss_function, optimizer):
+
+@tf.function
+def train_step(features, labels, model, optimizer):
   with tf.GradientTape() as tape:
     predictions = model(features)
-    loss = loss_function(labels, predictions)
+    loss = loss_fn(labels, predictions)
   gradients = tape.gradient(loss, model.trainable_variables)
   optimizer.apply_gradients(zip(gradients, model.trainable_variables))
   return loss, predictions
 
 
 @tf.function
-def test_step(features, labels, model, loss_function):
+def test_step(features, labels, model):
   predictions = model(features)
-  loss = loss_function(labels, predictions)
+  loss = loss_fn(labels, predictions)
   return loss, predictions
 
 
@@ -63,7 +69,6 @@ def main():
 
   model = Model()
 
-  loss_function = keras.losses.SparseCategoricalCrossentropy()
   optimizer = keras.optimizers.Adam(lr=0.001)
 
   logger = Logger()
@@ -73,14 +78,13 @@ def main():
     elapse = time.time()
 
     for images, labels in train_dataset:
-      loss, predictions = train_step(images, labels, model, loss_function,
-                                     optimizer)
+      loss, predictions = train_step(images, labels, model, optimizer)
       logger.log_progress(loss, labels, predictions, mode='train')
 
     elapse = time.time() - elapse
 
     for images, labels in test_dataset:
-      loss, predictions = test_step(images, labels, model, loss_function)
+      loss, predictions = test_step(images, labels, model)
       logger.log_progress(loss, labels, predictions, mode='test')
 
     logger.print_progress(epoch, elapse)
