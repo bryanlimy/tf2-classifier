@@ -11,14 +11,16 @@ from google.protobuf import struct_pb2
 def get_hparams(num_units=128,
                 optimizer='adam',
                 learning_rate=0.001,
+                dropout=0.4,
                 dataset='fashion_mnist',
                 run=0):
   hparams = HParams()
-  hparams.epochs = 20
+  hparams.epochs = 2
   hparams.batch_size = 64
   hparams.learning_rate = learning_rate
   hparams.num_units = num_units
   hparams.optimizer = optimizer
+  hparams.dropout = dropout
   hparams.dataset = dataset
   hparams.output_dir = 'runs/tuning/%03d_%s_lr%.4f_units%d' % (
       run, optimizer, learning_rate, num_units)
@@ -134,13 +136,15 @@ class Logger(object):
 
 
 def create_experiment_summary(optimizer_list, num_units_list,
-                              learning_rate_list):
+                              learning_rate_list, dropout_list):
   optimizer_list_val = struct_pb2.ListValue()
   optimizer_list_val.extend(optimizer_list)
   num_units_list_val = struct_pb2.ListValue()
   num_units_list_val.extend(num_units_list)
   learning_rate_list_val = struct_pb2.ListValue()
   learning_rate_list_val.extend(learning_rate_list)
+  dropout_list_val = struct_pb2.ListValue()
+  dropout_list_val.extend(dropout_list)
 
   return hparams_summary.experiment_pb(
       hparam_infos=[
@@ -159,12 +163,17 @@ def create_experiment_summary(optimizer_list, num_units_list,
               display_name='Learning rate',
               type=api_pb2.DATA_TYPE_FLOAT64,
               domain_discrete=learning_rate_list_val),
+          api_pb2.HParamInfo(
+              name='dropout',
+              display_name='Dropout',
+              type=api_pb2.DATA_TYPE_FLOAT64,
+              domain_discrete=dropout_list_val),
       ],
       metric_infos=[
           api_pb2.MetricInfo(
               name=api_pb2.MetricName(tag='accuracy'), display_name='Accuracy'),
           api_pb2.MetricInfo(
-              name=api_pb2.MetricName(tag='elapse'), display_name='Elapse')
+              name=api_pb2.MetricName(tag='elapse'), display_name='Elapse (s)')
       ])
 
 
@@ -174,8 +183,10 @@ def print_run_info(hparams):
         "\t num units: %d\n"
         "\t optimizer: %s\n"
         "\t learning rate: %.4f\n"
+        "\t dropout: %.2f\n"
         "-----------------------------------------" % (
             hparams.num_units,
             hparams.optimizer,
             hparams.learning_rate,
+            hparams.dropout,
         ))
