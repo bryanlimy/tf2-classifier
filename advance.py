@@ -2,9 +2,12 @@ import os
 import time
 import tensorflow as tf
 import tensorflow.keras as keras
-from utils import get_hparams, get_optimizer, Summary, get_dataset
+from tensorboard.plugins.hparams import api_pb2
+from utils import get_hparams, get_dataset, get_optimizer, Logger, \
+  print_run_info, create_experiment_summary
+from tensorboard.plugins.hparams import summary as hparams_summary
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 class Dense(keras.layers.Layer):
@@ -43,24 +46,17 @@ class Model(keras.Model):
         units=hparams.num_classes,
         activation=keras.activations.softmax,
     )
-    self.dropout = keras.layers.Dropout(rate=hparams.dropout)
 
   def call(self, inputs):
     output = self.flatten(inputs)
     output = self.dense1(output)
-    output = self.dropout(output)
     output = self.dense2(output)
-    output = self.dropout(output)
     output = self.dense3(output)
     return output
 
 
-def loss_fn(labels, predictions):
-  return keras.losses.SparseCategoricalCrossentropy()(labels, predictions)
-
-
-@tf.function
-def train_step(features, labels, model, optimizer):
+#@tf.function
+def train_step(features, labels, model, optimizer, loss_fn):
   with tf.GradientTape() as tape:
     predictions = model(features)
     loss = loss_fn(labels, predictions)
@@ -69,41 +65,71 @@ def train_step(features, labels, model, optimizer):
   return loss, predictions
 
 
-@tf.function
-def test_step(features, labels, model):
+#@tf.function
+def test_step(features, labels, model, loss_fn):
   predictions = model(features)
   loss = loss_fn(labels, predictions)
   return loss, predictions
 
 
-def main():
-  hparams = get_hparams()
+def train_and_test(hparams):
   datasets = get_dataset(hparams)
-
   model = Model(hparams)
-
   optimizer = get_optimizer(hparams)
+  loss_fn = keras.losses.SparseCategoricalCrossentropy()
+  logger = Logger(hparams, optimizer)
 
-  summary = Summary(hparams, optimizer)
+  summary_start = hparams_summary.session_start_pb(hparams=hparams.__dict__)
 
   for epoch in range(hparams.epochs):
 
-    elapse = time.time()
-    for images, labels in datasets['train']:
-      summary.write_images(images, mode='train')
-      loss, predictions = train_step(images, labels, model, optimizer)
-      summary.log_progress(loss, labels, predictions, mode='train')
+    start = time.time()
 
-    summary.write_scalars(mode='train')
-    elapse = time.time() - elapse
+    for images, labels in datasets['train']:
+      loss, predictions = train_step(images, labels, model, optimizer, loss_fn)
+      logger.log_progress(loss, labels, predictions, mode='train')
+
+    elapse = time.time() - start
+
+    logger.write_scalars(mode='train')
 
     for images, labels in datasets['test']:
-      summary.write_images(images, mode='test')
-      loss, predictions = test_step(images, labels, model)
-      summary.log_progress(loss, labels, predictions, mode='test')
+      logger.write_images(images, mode='test')
+      loss, predictions = test_step(images, labels, model, loss_fn)
+      logger.log_progress(loss, labels, predictions, mode='test')
 
-    summary.write_scalars(mode='test')
-    summary.print_progress(epoch, elapse)
+    logger.write_scalars(mode='test', elapse=elapse)
+    logger.print_progress(epoch, elapse)
+
+  summary_end = hparams_summary.session_end_pb(api_pb2.STATUS_SUCCESS)
+  logger.write_hparams_summary(summary_start, summary_end, elapse)
+
+
+def main():
+  # list of hparams to test
+  optimizer_list = ['adam', 'sgd']
+  num_units_list = [64, 128]
+  learning_rate_list = [0.01, 0.001]
+
+  exp_summary = create_experiment_summary(optimizer_list, num_units_list,
+                                          learning_rate_list)
+  root_writer = tf.summary.create_file_writer('runs/tuning')
+  with root_writer.as_default():
+    tf.summary.import_event(
+        tf.compat.v1.Event(summary=exp_summary).SerializeToString())
+
+  run = 0
+  for optimizer in optimizer_list:
+    for num_units in num_units_list:
+      for learning_rate in learning_rate_list:
+        hparams = get_hparams(
+            num_units=num_units,
+            optimizer=optimizer,
+            learning_rate=learning_rate,
+            run=run)
+        print_run_info(hparams)
+        train_and_test(hparams)
+        run += 1
 
 
 if __name__ == "__main__":

@@ -12,9 +12,7 @@ def main():
   model = keras.models.Sequential([
       keras.layers.Flatten(),
       keras.layers.Dense(hparams.num_units, activation='relu'),
-      keras.layers.Dropout(hparams.dropout),
       keras.layers.Dense(hparams.num_units, activation='relu'),
-      keras.layers.Dropout(hparams.dropout),
       keras.layers.Dense(hparams.num_classes, activation='softmax')
   ])
 
