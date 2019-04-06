@@ -30,7 +30,7 @@ class Model(keras.Model):
 
   def __init__(self, hparams):
     super().__init__()
-    self.flatten = keras.layers.Flatten()
+    self.flatten = keras.layers.Flatten(input_shape=(None, 28, 28, 1))
     self.dense1 = Dense(
         units=hparams.num_units,
         activation=keras.activations.relu,
@@ -43,14 +43,14 @@ class Model(keras.Model):
         units=hparams.num_classes,
         activation=keras.activations.softmax,
     )
-    self.dropout = keras.layers.Dropout(hparams.dropout)
+    self.dropout = keras.layers.Dropout(rate=hparams.dropout)
 
-  def call(self, inputs):
+  def call(self, inputs, training=True):
     output = self.flatten(inputs)
     output = self.dense1(output)
-    output = self.dropout(output)
+    output = self.dropout(output, training=training)
     output = self.dense2(output)
-    output = self.dropout(output)
+    output = self.dropout(output, training=training)
     output = self.dense3(output)
     return output
 
@@ -58,7 +58,7 @@ class Model(keras.Model):
 @tf.function
 def train_step(features, labels, model, optimizer, loss_fn):
   with tf.GradientTape() as tape:
-    predictions = model(features)
+    predictions = model(features, training=True)
     loss = loss_fn(labels, predictions)
   gradients = tape.gradient(loss, model.trainable_variables)
   optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -67,7 +67,7 @@ def train_step(features, labels, model, optimizer, loss_fn):
 
 @tf.function
 def test_step(features, labels, model, loss_fn):
-  predictions = model(features)
+  predictions = model(features, training=False)
   loss = loss_fn(labels, predictions)
   return loss, predictions
 

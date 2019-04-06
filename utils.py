@@ -34,6 +34,7 @@ def get_dataset(hparams):
       name=hparams.dataset, with_info=True, as_supervised=True)
 
   hparams.num_classes = info.features['label'].num_classes
+  hparams.input_shape = info.features['image'].shape
 
   def scale_image(image, label):
     return tf.cast(image, tf.float32) / 255.0, label
