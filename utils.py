@@ -15,7 +15,7 @@ def get_hparams(num_units=128,
                 dataset='fashion_mnist',
                 run=0):
   hparams = HParams()
-  hparams.epochs = 25
+  hparams.epochs = 40
   hparams.batch_size = 64
   hparams.learning_rate = learning_rate
   hparams.num_units = num_units
@@ -135,14 +135,11 @@ class Logger(object):
                         self.test_accuracy.result() * 100, elapse))
 
 
-def create_experiment_summary(optimizer_list, num_units_list,
-                              learning_rate_list, dropout_list):
+def create_experiment_summary(optimizer_list, num_units_list, dropout_list):
   optimizer_list_val = struct_pb2.ListValue()
   optimizer_list_val.extend(optimizer_list)
   num_units_list_val = struct_pb2.ListValue()
   num_units_list_val.extend(num_units_list)
-  learning_rate_list_val = struct_pb2.ListValue()
-  learning_rate_list_val.extend(learning_rate_list)
   dropout_list_val = struct_pb2.ListValue()
   dropout_list_val.extend(dropout_list)
 
@@ -158,11 +155,6 @@ def create_experiment_summary(optimizer_list, num_units_list,
               display_name='Number of units',
               type=api_pb2.DATA_TYPE_FLOAT64,
               domain_discrete=num_units_list_val),
-          api_pb2.HParamInfo(
-              name='learning_rate',
-              display_name='Learning rate',
-              type=api_pb2.DATA_TYPE_FLOAT64,
-              domain_discrete=learning_rate_list_val),
           api_pb2.HParamInfo(
               name='dropout',
               display_name='Dropout',
@@ -182,11 +174,9 @@ def print_run_info(hparams):
         "BEGINNING RUN:\n"
         "\t num units: %d\n"
         "\t optimizer: %s\n"
-        "\t learning rate: %.4f\n"
         "\t dropout: %.2f\n"
         "-----------------------------------------" % (
             hparams.num_units,
             hparams.optimizer,
-            hparams.learning_rate,
             hparams.dropout,
         ))

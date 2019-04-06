@@ -111,12 +111,11 @@ def train_and_test(hparams):
 def main():
   # list of hparams to test
   optimizer_list = ['adam', 'sgd']
-  num_units_list = [64, 128]
-  learning_rate_list = [0.01, 0.001]
-  dropout_list = [0.0, 0.4, 0.8]
+  num_units_list = [32, 128]
+  dropout_list = [0.0, 0.4, 0.9]
 
   exp_summary = create_experiment_summary(optimizer_list, num_units_list,
-                                          learning_rate_list, dropout_list)
+                                          dropout_list)
   root_writer = tf.summary.create_file_writer('runs/tuning')
   with root_writer.as_default():
     tf.summary.import_event(
@@ -125,17 +124,12 @@ def main():
   run = 0
   for optimizer in optimizer_list:
     for num_units in num_units_list:
-      for learning_rate in learning_rate_list:
-        for dropout in dropout_list:
-          hparams = get_hparams(
-              num_units=num_units,
-              optimizer=optimizer,
-              learning_rate=learning_rate,
-              dropout=dropout,
-              run=run)
-          print_run_info(hparams)
-          train_and_test(hparams)
-          run += 1
+      for dropout in dropout_list:
+        hparams = get_hparams(
+            num_units=num_units, optimizer=optimizer, dropout=dropout, run=run)
+        print_run_info(hparams)
+        train_and_test(hparams)
+        run += 1
 
 
 if __name__ == "__main__":
