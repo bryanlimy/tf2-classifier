@@ -97,7 +97,6 @@ def train_and_test(hparams):
     logger.write_scalars(mode='train')
 
     for images, labels in datasets['test']:
-      logger.write_images(images, mode='test')
       loss, predictions = test_step(images, labels, model, loss_fn)
       logger.log_progress(loss, labels, predictions, mode='test')
 
@@ -112,7 +111,7 @@ def main():
   # list of hparams to test
   optimizer_list = ['adam', 'sgd']
   num_units_list = [32, 128]
-  dropout_list = [0.0, 0.4, 0.9]
+  dropout_list = [0.0, 0.5, 0.95]
 
   exp_summary = create_experiment_summary(optimizer_list, num_units_list,
                                           dropout_list)

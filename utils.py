@@ -13,7 +13,8 @@ def get_hparams(num_units=128,
                 learning_rate=0.001,
                 dropout=0.4,
                 dataset='fashion_mnist',
-                run=0):
+                run=0,
+                output_root='runs/tuning'):
   hparams = HParams()
   hparams.epochs = 40
   hparams.batch_size = 64
@@ -22,8 +23,9 @@ def get_hparams(num_units=128,
   hparams.optimizer = optimizer
   hparams.dropout = dropout
   hparams.dataset = dataset
-  hparams.output_dir = 'runs/tuning/%03d_%s_lr%.4f_units%d' % (
-      run, optimizer, learning_rate, num_units)
+  hparams.output_dir = os.path.join(
+      output_root,
+      '%03d_%s_units%d_dropout%.2f' % (run, optimizer, num_units, dropout))
   return hparams
 
 
