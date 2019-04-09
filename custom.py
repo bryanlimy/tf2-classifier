@@ -101,7 +101,7 @@ def train_and_test(hparams):
 
 
 def main():
-  hparams = get_hparams(output_root='runs/custom')
+  hparams = get_hparams(num_units=1024, dropout=0.0, output_root='runs/custom')
   train_and_test(hparams)
 
 

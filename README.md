@@ -10,9 +10,13 @@ pip install tensorflow==2.0.0-alpha tensorflow-datasets
 ```
 python simple.py
 ```
-- functional model with custom training loop and TensorBoard Hparams logging
+- functional model with custom training loop
 ```
-python advanced.py
+python custom.py
 tensorboard --logdir runs
 ```
-
+- functional model with TensorBoard hparams tuning
+```
+python tuning.py
+tensorboard --logdir runs
+```
